@@ -14,6 +14,8 @@ import { toOutputScript } from 'bitcoinjs-lib/src/address';
 import { compactIdToOutpoint, outpointToCompactId } from './utils/atomical-format-helpers';
 import * as quotes from 'success-motivational-quotes'; 
 import * as chalk from 'chalk';
+import { getBtcRecommendFees } from "./utils/utils";
+
  
 dotenv.config();
 
@@ -1602,11 +1604,39 @@ program.command('mint-dft')
       let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
       const sats = parseInt(options.satsbyte);
 
-      const result: any = await atomicals.mintDftInteractive({
-        rbf: options.rbf,
-        satsbyte: parseInt(options.satsbyte),
-        disableMiningChalk: options.disablechalk,
-      }, walletRecord.address, ticker, fundingRecord.WIF);
+      let gather_address = process.env.GATHER_ADDRESS || walletRecord.address;
+
+      if (!gather_address) {
+        console.error(`${gather_address} primary gather address is null.....`);
+        return;
+      }
+
+      let fastestFee = await getBtcRecommendFees();
+      const maxFees = process.env.MAX_FEES || 100;
+      const minFees = process.env.MIN_FEES || 67;
+      // 如果fastestFee大于180，则直接返回
+      if (fastestFee > Number(maxFees)) {
+        console.error(`fastfee to high ${fastestFee}`);
+        //return;
+        fastestFee = Number(maxFees);
+      }
+      let adjustedFee = Math.round(fastestFee * 1.06);
+
+      if (adjustedFee < Number(minFees)) {
+        adjustedFee = Number(minFees);
+      }
+      console.log(`adjustFee *: ${adjustedFee}`);
+
+      const result: any = await atomicals.mintDftInteractive(
+        {
+          rbf: options.rbf,
+          satsbyte: adjustedFee,
+          disableMiningChalk: options.disablechalk,
+        },
+        gather_address,
+        ticker,
+        fundingRecord.WIF
+      );
       handleResultLogging(result, true);
     } catch (error) {
       console.log(error);
