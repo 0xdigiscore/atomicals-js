@@ -319,19 +319,19 @@ export const appendMintUpdateRevealScript = (
     payload: AtomicalsPayload,
     log: boolean = true
 ) => {
-    let ops = `${keypair.childNodeXOnlyPubkey.toString(
-        "hex"
-    )} OP_CHECKSIG OP_0 OP_IF `;
-    ops += `${Buffer.from(ATOMICALS_PROTOCOL_ENVELOPE_ID, "utf8").toString(
-        "hex"
-    )}`;
-    ops += ` ${Buffer.from(opType, "utf8").toString("hex")}`;
+    let ops = [
+      `${keypair.childNodeXOnlyPubkey.toString("hex")} OP_CHECKSIG OP_0 OP_IF`,
+    ];
+    ops.push(
+      `${Buffer.from(ATOMICALS_PROTOCOL_ENVELOPE_ID, "utf8").toString("hex")}`
+    );
+    ops.push(`${Buffer.from(opType, "utf8").toString("hex")}`);
     const chunks = chunkBuffer(payload.cbor(), 520);
     for (let chunk of chunks) {
-        ops += ` ${chunk.toString("hex")}`;
+      ops.push(chunk.toString("hex"));
     }
-    ops += ` OP_ENDIF`;
-    return ops;
+    ops.push("OP_ENDIF");
+    return ops.join(" ");
 };
 
 function sleep(ms: number) {
