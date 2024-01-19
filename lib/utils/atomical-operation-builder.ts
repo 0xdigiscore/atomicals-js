@@ -121,8 +121,7 @@ function logMiningProgressToConsole(
         }
         return;
     }
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
+    process.stdout.write("\r\x1b[K");
     process.stdout.write(chalk.red(txid, " nonces: ", nonces));
 }
 
